@@ -28,6 +28,7 @@ func (h *HealthHandler) Health(c *gin.Context) {
 		Success: true,
 		Data: map[string]string{
 			"status":  "ok",
+			"service": "workpulse-backend",
 			"version": version,
 			"time":    time.Now().UTC().Format(time.RFC3339),
 		},

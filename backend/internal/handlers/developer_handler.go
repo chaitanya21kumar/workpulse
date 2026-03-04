@@ -2,13 +2,37 @@ package handlers
 
 import (
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/chaitanya21kumar/workpulse/backend/internal/models"
 	"github.com/chaitanya21kumar/workpulse/backend/internal/services"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
+
+// githubUsernameRe validates GitHub username rules:
+// 1-39 chars, alphanumeric or hyphens, not starting/ending with hyphen.
+var githubUsernameRe = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$`)
+
+// validateGitHubUsername returns an error message if the username is invalid, else "".
+func validateGitHubUsername(username string) string {
+	username = strings.TrimSpace(username)
+	if username == "" {
+		return "username is required"
+	}
+	if len(username) > 39 {
+		return "username must be 39 characters or fewer"
+	}
+	if strings.Contains(username, "--") {
+		return "username cannot contain consecutive hyphens"
+	}
+	if !githubUsernameRe.MatchString(username) {
+		return "username must contain only alphanumeric characters or hyphens and cannot start or end with a hyphen"
+	}
+	return ""
+}
 
 // DeveloperHandler handles HTTP requests for developer operations
 type DeveloperHandler struct {
@@ -30,6 +54,15 @@ func (h *DeveloperHandler) RegisterDeveloper(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
 			Success: false,
 			Message: "username is required",
+			Code:    "VALIDATION_ERROR",
+		})
+		return
+	}
+
+	if msg := validateGitHubUsername(req.Username); msg != "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Success: false,
+			Message: msg,
 			Code:    "VALIDATION_ERROR",
 		})
 		return
@@ -134,7 +167,15 @@ func (h *DeveloperHandler) DeleteDeveloper(c *gin.Context) {
 
 // TriggerScrape handles POST /api/v1/developers/:username/scrape
 func (h *DeveloperHandler) TriggerScrape(c *gin.Context) {
-	username := c.Param("username")
+	username := strings.TrimSpace(c.Param("username"))
+	if msg := validateGitHubUsername(username); msg != "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Success: false,
+			Message: msg,
+			Code:    "VALIDATION_ERROR",
+		})
+		return
+	}
 	if err := h.svc.TriggerRescrape(c.Request.Context(), username); err != nil {
 		h.logger.Error("Failed to trigger scrape",
 			zap.String("username", username), zap.Error(err))
