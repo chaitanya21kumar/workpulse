@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    env_file: .env
+  ml-service:
+    build: ./ml-service
+    ports:
+      - "8001:8001"
+    env_file: .env
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    env_file: .env
+    depends_on:
+      - backend
