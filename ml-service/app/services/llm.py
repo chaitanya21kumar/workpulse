@@ -10,7 +10,7 @@ import logging
 from typing import Dict, Any
 
 from langchain_groq import ChatGroq
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
 logger = logging.getLogger(__name__)
