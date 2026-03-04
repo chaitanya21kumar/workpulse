@@ -1,0 +1,37 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker asia-south1-docker.pkg.dev
+      - name: Build and push images
+        run: |
+          docker build -t asia-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workpulse/backend:${{ github.sha }} ./backend
+          docker push asia-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workpulse/backend:${{ github.sha }}
+          docker build -t asia-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workpulse/ml-service:${{ github.sha }} ./ml-service
+          docker push asia-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workpulse/ml-service:${{ github.sha }}
+          docker build -t asia-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workpulse/frontend:${{ github.sha }} ./frontend
+          docker push asia-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workpulse/frontend:${{ github.sha }}
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy workpulse-backend \
+            --image asia-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workpulse/backend:${{ github.sha }} \
+            --region asia-south1 --min-instances 0 --max-instances 3 --allow-unauthenticated
+          gcloud run deploy workpulse-ml \
+            --image asia-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workpulse/ml-service:${{ github.sha }} \
+            --region asia-south1 --min-instances 0 --max-instances 2
+          gcloud run deploy workpulse-frontend \
+            --image asia-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workpulse/frontend:${{ github.sha }} \
+            --region asia-south1 --min-instances 0 --max-instances 3 --allow-unauthenticated
