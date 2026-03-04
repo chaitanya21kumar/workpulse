@@ -11,6 +11,7 @@ import (
 // Config holds all application configuration
 type Config struct {
 	Port              string
+	Environment       string
 	GinMode           string
 	FirebaseProjectID string
 	GitHubToken       string
@@ -36,6 +37,7 @@ func Load(logger *zap.Logger) *Config {
 
 	return &Config{
 		Port:              getEnv("PORT", "8080"),
+		Environment:       getEnv("ENVIRONMENT", "production"),
 		GinMode:           getEnv("GIN_MODE", "release"),
 		FirebaseProjectID: getEnv("FIREBASE_PROJECT_ID", ""),
 		GitHubToken:       getEnv("GITHUB_TOKEN", ""),

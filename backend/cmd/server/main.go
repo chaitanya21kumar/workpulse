@@ -81,9 +81,11 @@ func main() {
 	r.GET("/health", healthHandler.Health)
 	r.GET("/ready", healthHandler.Ready)
 
-	// API v1 routes — all require Firebase JWT auth
+	// API v1 routes — require Firebase JWT auth in production
 	v1 := r.Group("/api/v1")
-	v1.Use(middleware.FirebaseAuth(firebaseApp))
+	if cfg.Environment != "development" {
+		v1.Use(middleware.FirebaseAuth(firebaseApp))
+	}
 	{
 		// Developers
 		devs := v1.Group("/developers")
