@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -39,6 +39,13 @@ export default function DashboardPage() {
   const [showModal, setShowModal] = useState(false);
   const qc = useQueryClient();
   const router = useRouter();
+
+  // Redirect to login when auth resolves with no user
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [authLoading, user, router]);
 
   const {
     data: developers,

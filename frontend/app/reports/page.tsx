@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,7 +18,15 @@ interface Report {
 export default function ReportsPage() {
   const { user, loading: authLoading } = useAuth();
   const qc = useQueryClient();
+  const router = useRouter();
   const [generating, setGenerating] = useState(false);
+
+  // Redirect to login when auth resolves with no user
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [authLoading, user, router]);
 
   const {
     data: reports,

@@ -1,6 +1,7 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   RadarChart,
@@ -52,6 +53,14 @@ export default function DeveloperProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const qc = useQueryClient();
+  const router = useRouter();
+
+  // Redirect to login when auth resolves with no user
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [authLoading, user, router]);
 
   const {
     data: developer,
