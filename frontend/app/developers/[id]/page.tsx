@@ -129,8 +129,18 @@ export default function DeveloperProfilePage() {
   }, [githubRepos]);
 
   const { mutate: refreshInsights, isPending: refreshing } = useMutation({
-    mutationFn: async () => { await api.post(`/api/v1/insights/${id}`); },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["developer", id] }),
+    mutationFn: async () => {
+      const username = developer?.github_username ?? id;
+      const res = await api.post(`/api/v1/developers/${username}/insights`);
+      // The backend returns APIResponse { success, data: AIInsights, message }
+      return res.data?.data ?? res.data;
+    },
+    onSuccess: (freshInsights) => {
+      // Update the cached developer record with the new insights
+      qc.setQueryData<Developer>(["developer", id], (old) =>
+        old ? { ...old, insights: freshInsights } : old
+      );
+    },
   });
 
   if (authLoading || !user || isLoading) {
@@ -187,10 +197,8 @@ export default function DeveloperProfilePage() {
     );
   }
 
-  // Guard against undefined display_name / github_username before calling charAt
-  const initial = (developer.display_name || developer.github_username || "?")
-    .charAt(0)
-    .toUpperCase();
+  // Use github_username for the avatar initial
+  const initial = (developer.github_username || "D").charAt(0).toUpperCase();
 
   const metrics = [
     { name: "Commits", value: developer.commits ?? 0, icon: "📝", accent: "indigo" },
@@ -265,8 +273,12 @@ export default function DeveloperProfilePage() {
                 </div>
               )}
               <div>
-                <h1 className="text-3xl font-bold text-white">{developer.display_name || developer.github_username}</h1>
-                <p className="text-slate-400 text-sm mt-0.5">@{developer.github_username}</p>
+                <h1 className="text-3xl font-bold text-white">
+                  {developer.display_name || developer.github_username}
+                </h1>
+                {developer.display_name && developer.display_name !== developer.github_username && (
+                  <p className="text-slate-400 text-sm mt-0.5">@{developer.github_username}</p>
+                )}
                 {developer.tier && tierStyle && (
                   <span
                     className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold"
@@ -402,7 +414,7 @@ export default function DeveloperProfilePage() {
               }}
             >
               <h2 className="font-bold text-white mb-4">Metric Breakdown</h2>
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={280}>
                 <RadarChart data={radarData} style={{ background: "#0f0f1a" }}>
                   <PolarGrid stroke="rgba(255,255,255,0.08)" />
                   <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: "#475569" }} />

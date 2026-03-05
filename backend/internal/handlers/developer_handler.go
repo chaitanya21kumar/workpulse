@@ -193,3 +193,34 @@ func (h *DeveloperHandler) TriggerScrape(c *gin.Context) {
 		Message: "scrape job triggered",
 	})
 }
+
+// GenerateInsights handles POST /api/v1/developers/:username/insights
+func (h *DeveloperHandler) GenerateInsights(c *gin.Context) {
+	username := strings.TrimSpace(c.Param("username"))
+	if msg := validateGitHubUsername(username); msg != "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Success: false,
+			Message: msg,
+			Code:    "VALIDATION_ERROR",
+		})
+		return
+	}
+
+	insights, err := h.svc.GenerateInsights(c.Request.Context(), username)
+	if err != nil {
+		h.logger.Error("Failed to generate insights",
+			zap.String("username", username), zap.Error(err))
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Success: false,
+			Message: err.Error(),
+			Code:    "INTERNAL_ERROR",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Success: true,
+		Data:    insights,
+		Message: "insights generated successfully",
+	})
+}

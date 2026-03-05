@@ -17,20 +17,21 @@ export default function InsightPanel({ insights }: { insights: Insights }) {
   if (!insights?.summary) {
     return (
       <div
-        className="rounded-2xl p-8 text-center"
         style={{
-          background: "#0d1117",
-          border: "1px solid rgba(255,255,255,0.06)",
+          background: "rgba(99,102,241,0.05)",
+          border: "1px solid rgba(99,102,241,0.15)",
+          borderRadius: "16px",
+          padding: "32px",
+          textAlign: "center",
         }}
       >
-        <div
-          className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
-          style={{ background: "rgba(255,255,255,0.05)" }}
-        >
-          <span className="text-2xl">🤖</span>
-        </div>
-        <p className="font-medium" style={{ color: "#94a3b8" }}>No AI insights yet</p>
-        <p className="text-sm mt-1" style={{ color: "#475569" }}>Click &quot;Refresh Insights&quot; to generate analysis</p>
+        <div style={{ fontSize: "32px", marginBottom: "12px" }}>✦</div>
+        <p style={{ color: "#a5b4fc", fontWeight: 600, marginBottom: "8px" }}>
+          No AI insights yet
+        </p>
+        <p style={{ color: "#475569", fontSize: "13px" }}>
+          Click &quot;Refresh Insights&quot; to generate a Groq AI analysis of this developer&apos;s performance
+        </p>
       </div>
     );
   }

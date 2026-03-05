@@ -1,8 +1,12 @@
 package services
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/chaitanya21kumar/workpulse/backend/internal/models"
@@ -13,11 +17,12 @@ import (
 )
 
 type developerService struct {
-	devRepo    repository.DeveloperRepository
-	scrapeRepo repository.ScrapeJobRepository
-	scraper    scraper.GitHubScraper
-	scrapeSvc  ScrapeService
-	logger     *zap.Logger
+	devRepo     repository.DeveloperRepository
+	scrapeRepo  repository.ScrapeJobRepository
+	scraper     scraper.GitHubScraper
+	scrapeSvc   ScrapeService
+	groqAPIKey  string
+	logger      *zap.Logger
 }
 
 // NewDeveloperService creates a new DeveloperService implementation
@@ -26,6 +31,7 @@ func NewDeveloperService(
 	scrapeRepo repository.ScrapeJobRepository,
 	ghScraper scraper.GitHubScraper,
 	scrapeSvc ScrapeService,
+	groqAPIKey string,
 	logger *zap.Logger,
 ) DeveloperService {
 	return &developerService{
@@ -33,6 +39,7 @@ func NewDeveloperService(
 		scrapeRepo: scrapeRepo,
 		scraper:    ghScraper,
 		scrapeSvc:  scrapeSvc,
+		groqAPIKey: groqAPIKey,
 		logger:     logger,
 	}
 }
@@ -165,4 +172,123 @@ func (s *developerService) TriggerRescrape(ctx context.Context, username string)
 
 	s.logger.Info("Rescrape triggered", zap.String("username", username))
 	return nil
+}
+
+// GenerateInsights generates AI insights for a developer by calling Groq directly.
+func (s *developerService) GenerateInsights(ctx context.Context, username string) (*models.AIInsights, error) {
+	if s.groqAPIKey == "" {
+		return nil, fmt.Errorf("GROQ_API_KEY is not configured on the server")
+	}
+
+	dev, err := s.GetDeveloper(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	insights, err := generateInsightsFromGroq(ctx, s.groqAPIKey, dev)
+	if err != nil {
+		s.logger.Error("Groq insights generation failed",
+			zap.String("username", username), zap.Error(err))
+		return nil, fmt.Errorf("failed to generate insights: %w", err)
+	}
+
+	s.logger.Info("Insights generated via Groq", zap.String("username", username))
+	return insights, nil
+}
+
+// generateInsightsFromGroq calls the Groq API and returns structured AIInsights.
+func generateInsightsFromGroq(ctx context.Context, groqAPIKey string, dev *models.Developer) (*models.AIInsights, error) {
+	prompt := fmt.Sprintf(`Analyze this developer's GitHub stats and provide structured insights.
+Developer: %s
+Commits: %d
+PRs Merged: %d
+Code Reviews: %d
+Issues Closed: %d
+Score: %.1f/100
+Tier: %s
+
+Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
+{
+  "summary": "2-3 sentence performance overview",
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "improvements": ["area to improve 1", "area to improve 2"],
+  "action_items": ["specific action 1", "specific action 2"],
+  "team_impact": "1 sentence about team impact",
+  "predicted_trend": "improving"
+}
+The predicted_trend must be one of: "improving", "stable", "declining"`,
+		dev.GitHubUsername, dev.TotalCommits, dev.TotalPRs, dev.TotalReviews,
+		dev.TotalIssues, dev.ContributionScore, dev.Tier)
+
+	reqBody := map[string]interface{}{
+		"model": "llama-3.3-70b-versatile",
+		"messages": []map[string]string{
+			{"role": "user", "content": prompt},
+		},
+		"max_tokens":  600,
+		"temperature": 0.7,
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal groq request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		"https://api.groq.com/openai/v1/chat/completions",
+		bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to build groq request: %w", err)
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+groqAPIKey)
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("groq API call failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var errBody struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&errBody)
+		if errBody.Error.Message != "" {
+			return nil, fmt.Errorf("groq API error (status %d): %s", resp.StatusCode, errBody.Error.Message)
+		}
+		return nil, fmt.Errorf("groq API returned status %d", resp.StatusCode)
+	}
+
+	var groqResp struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&groqResp); err != nil {
+		return nil, fmt.Errorf("failed to decode groq response: %w", err)
+	}
+	if len(groqResp.Choices) == 0 {
+		return nil, fmt.Errorf("empty groq response")
+	}
+
+	content := strings.TrimSpace(groqResp.Choices[0].Message.Content)
+	// Strip markdown code fences if present
+	if strings.HasPrefix(content, "```") {
+		lines := strings.Split(content, "\n")
+		if len(lines) > 2 {
+			content = strings.Join(lines[1:len(lines)-1], "\n")
+		}
+	}
+
+	var insights models.AIInsights
+	if err := json.Unmarshal([]byte(content), &insights); err != nil {
+		return nil, fmt.Errorf("failed to parse insights JSON from groq: %w", err)
+	}
+	return &insights, nil
 }

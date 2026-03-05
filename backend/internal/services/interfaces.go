@@ -17,6 +17,7 @@ type DeveloperService interface {
 	GetLeaderboard(ctx context.Context, period string, limit int) ([]*models.Developer, error)
 	DeleteDeveloper(ctx context.Context, username string) error
 	TriggerRescrape(ctx context.Context, username string) error
+	GenerateInsights(ctx context.Context, username string) (*models.AIInsights, error)
 }
 
 // ScrapeService defines business logic for GitHub data scraping

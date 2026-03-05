@@ -61,7 +61,7 @@ func main() {
 
 	// Initialize services (scrape service before developer service)
 	scrapeSvc := services.NewScrapeService(ghScraper, metricsRepo, devRepo, cfg.MLServiceURL, logger)
-	devSvc := services.NewDeveloperService(devRepo, scrapeJobRepo, ghScraper, scrapeSvc, logger)
+	devSvc := services.NewDeveloperService(devRepo, scrapeJobRepo, ghScraper, scrapeSvc, cfg.GroqAPIKey, logger)
 	reportSvc := services.NewReportService(reportRepo, devRepo, metricsRepo, cfg.MLServiceURL, logger)
 
 	// Initialize HTTP handlers
@@ -94,6 +94,7 @@ func main() {
 		devs.GET("/:username", devHandler.GetDeveloper)
 		devs.DELETE("/:username", devHandler.DeleteDeveloper)
 		devs.POST("/:username/scrape", devHandler.TriggerScrape)
+		devs.POST("/:username/insights", devHandler.GenerateInsights)
 
 		// Metrics
 		metrics := v1.Group("/metrics")
