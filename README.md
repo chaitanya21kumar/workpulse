@@ -9,22 +9,40 @@
 
 ---
 
-## Screenshots
+## Platform Preview
+
+### Dashboard
+Real-time team leaderboard with ML-computed performance scores and commit activity chart.
 
 ![Dashboard](docs/screenshots/screenshot-dashboard.png)
-*Real-time leaderboard with ML-computed performance scores and team commit chart*
+
+---
+
+### Developer Profile
+Individual developer page with GitHub metrics, score ring, tier badge, and radar chart breakdown.
 
 ![Developer Profile](docs/screenshots/screenshot-developer-profile.png)
-*Individual developer profile with GitHub metrics, score ring, and tier badge*
+
+---
+
+### Repositories & Language Breakdown
+Top repositories sorted by stars alongside per-language contribution distribution.
 
 ![Repositories & Language Breakdown](docs/screenshots/screenshot-repos-insights.png)
-*Top repositories sorted by stars with language distribution bars*
+
+---
+
+### AI Insights
+Groq LLM-generated analysis — strengths, improvement areas, action items, and performance trend.
 
 ![AI Insights](docs/screenshots/screenshot-ai-insights.png)
-*Groq LLM-generated AI insights: strengths, improvements, and concrete action items*
+
+---
+
+### Add Developer
+Track any public GitHub developer with a single username lookup.
 
 ![Add Developer](docs/screenshots/screenshot-add-developer.png)
-*Track any GitHub developer with a single username lookup*
 
 ---
 
