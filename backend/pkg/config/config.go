@@ -29,7 +29,7 @@ func Load(logger *zap.Logger) *Config {
 		logger.Info("No .env file found, using environment variables")
 	}
 
-	originsStr := getEnv("ALLOWED_ORIGINS", "http://localhost:3000")
+	originsStr := getEnv("ALLOWED_ORIGINS", "https://workpulse-ai.netlify.app,http://localhost:3000")
 	origins := strings.Split(originsStr, ",")
 	for i, o := range origins {
 		origins[i] = strings.TrimSpace(o)

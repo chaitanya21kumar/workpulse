@@ -39,7 +39,7 @@ services:
           type: web
           envVarKey: RENDER_EXTERNAL_URL
       - key: ALLOWED_ORIGINS
-        sync: false   # set to your Netlify URL, e.g. https://workpulse.netlify.app
+        value: https://workpulse-ai.netlify.app,http://localhost:3000
       - key: BIGQUERY_PROJECT_ID
         value: workpulse-88fab
       - key: BIGQUERY_DATASET_ID
