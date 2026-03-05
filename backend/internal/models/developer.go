@@ -6,14 +6,14 @@ import "time"
 type Developer struct {
 	ID                string    `json:"id" firestore:"id"`
 	GitHubUsername    string    `json:"github_username" firestore:"github_username"`
-	Name              string    `json:"name" firestore:"name"`
+	Name              string    `json:"display_name" firestore:"name"`
 	Email             string    `json:"email" firestore:"email"`
 	AvatarURL         string    `json:"avatar_url" firestore:"avatar_url"`
-	TotalCommits      int       `json:"total_commits" firestore:"total_commits"`
-	TotalPRs          int       `json:"total_prs" firestore:"total_prs"`
-	TotalReviews      int       `json:"total_reviews" firestore:"total_reviews"`
-	TotalIssues       int       `json:"total_issues" firestore:"total_issues"`
-	ContributionScore float64   `json:"contribution_score" firestore:"contribution_score"`
+	TotalCommits      int       `json:"commits" firestore:"total_commits"`
+	TotalPRs          int       `json:"prs_merged" firestore:"total_prs"`
+	TotalReviews      int       `json:"reviews_given" firestore:"total_reviews"`
+	TotalIssues       int       `json:"issues_closed" firestore:"total_issues"`
+	ContributionScore float64   `json:"score" firestore:"contribution_score"`
 	Tier              string    `json:"tier" firestore:"tier"`
 	LastUpdated       time.Time `json:"last_updated" firestore:"last_updated"`
 	CreatedAt         time.Time `json:"created_at" firestore:"created_at"`

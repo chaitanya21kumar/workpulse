@@ -121,18 +121,14 @@ func (s *scrapeService) ScrapeGitHubData(ctx context.Context, username string, r
 }
 
 func (s *scrapeService) callMLScoring(ctx context.Context, username string, metrics *models.GitHubMetrics) (float64, map[string]float64, error) {
+	// ML ScoreRequest expects flat top-level fields (not nested under "metrics")
 	payload := map[string]interface{}{
-		"username": username,
-		"metrics": map[string]interface{}{
-			"commits":       metrics.Commits,
-			"prs_opened":    metrics.PRsOpened,
-			"prs_merged":    metrics.PRsMerged,
-			"code_reviews":  metrics.CodeReviews,
-			"issues_closed": metrics.IssuesClosed,
-			"lines_added":   metrics.LinesAdded,
-			"lines_deleted": metrics.LinesDeleted,
-			"period":        metrics.Period,
-		},
+		"commits":       metrics.Commits,
+		"prs_merged":    metrics.PRsMerged,
+		"reviews_given": metrics.CodeReviews,
+		"issues_closed": metrics.IssuesClosed,
+		"lines_changed": metrics.LinesAdded + metrics.LinesDeleted,
+		"active_days":   0, // not yet tracked per-repo; defaults to 0
 	}
 
 	body, err := json.Marshal(payload)
@@ -163,13 +159,13 @@ func (s *scrapeService) callMLScoring(ctx context.Context, username string, metr
 
 func tierFromScore(score float64) string {
 	switch {
-	case score >= 80:
-		return "Top Performer"
-	case score >= 60:
-		return "High Performer"
-	case score >= 40:
-		return "Average"
+	case score >= 85:
+		return "Elite"
+	case score >= 70:
+		return "Senior"
+	case score >= 50:
+		return "Mid"
 	default:
-		return "Needs Improvement"
+		return "Junior"
 	}
 }
