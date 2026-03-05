@@ -3,7 +3,10 @@ export function TableRowSkeleton() {
     <tr className="animate-pulse">
       {[...Array(5)].map((_, i) => (
         <td key={i} className="px-5 py-4">
-          <div className={`h-4 bg-slate-100 rounded-lg ${i === 0 ? "w-3/4" : "w-1/2"}`} />
+          <div
+            className={`h-4 rounded-lg ${i === 0 ? "w-3/4" : "w-1/2"}`}
+            style={{ background: "rgba(255,255,255,0.06)" }}
+          />
         </td>
       ))}
     </tr>
@@ -12,9 +15,12 @@ export function TableRowSkeleton() {
 
 export function CardSkeleton() {
   return (
-    <div className="animate-pulse bg-slate-100 rounded-2xl p-5 h-28">
-      <div className="h-3 bg-slate-200 rounded-lg w-1/3 mb-4" />
-      <div className="h-8 bg-slate-200 rounded-lg w-1/2" />
+    <div
+      className="animate-pulse rounded-2xl p-5 h-28"
+      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+    >
+      <div className="h-3 rounded-lg w-1/3 mb-4" style={{ background: "rgba(255,255,255,0.07)" }} />
+      <div className="h-8 rounded-lg w-1/2" style={{ background: "rgba(255,255,255,0.07)" }} />
     </div>
   );
 }

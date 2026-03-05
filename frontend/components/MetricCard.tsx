@@ -6,24 +6,44 @@ interface MetricCardProps {
 }
 
 export default function MetricCard({ name, value, icon, accent = "indigo" }: MetricCardProps) {
-  const accents: Record<string, string> = {
-    indigo: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    amber: "bg-amber-50 text-amber-700 border-amber-200",
-    blue: "bg-blue-50 text-blue-700 border-blue-200",
-    purple: "bg-purple-50 text-purple-700 border-purple-200",
-    rose: "bg-rose-50 text-rose-700 border-rose-200",
+  const accentColors: Record<string, { bg: string; color: string; border: string }> = {
+    indigo: { bg: "rgba(99,102,241,0.15)",  color: "#a5b4fc", border: "rgba(99,102,241,0.25)" },
+    emerald: { bg: "rgba(34,197,94,0.15)",  color: "#86efac", border: "rgba(34,197,94,0.25)" },
+    amber:   { bg: "rgba(245,158,11,0.15)", color: "#fcd34d", border: "rgba(245,158,11,0.25)" },
+    blue:    { bg: "rgba(59,130,246,0.15)", color: "#93c5fd", border: "rgba(59,130,246,0.25)" },
+    purple:  { bg: "rgba(139,92,246,0.15)", color: "#c4b5fd", border: "rgba(139,92,246,0.25)" },
+    rose:    { bg: "rgba(244,63,94,0.15)",  color: "#fda4af", border: "rgba(244,63,94,0.25)" },
   };
 
+  const a = accentColors[accent] ?? accentColors.indigo;
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow">
+    <div
+      className="rounded-2xl p-5 transition-all"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.06)",
+      }}
+    >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{name}</p>
-          <p className="text-3xl font-bold text-slate-800 leading-none">{value}</p>
+          <p
+            className="text-xs font-semibold uppercase tracking-wider mb-2"
+            style={{ color: "#64748b" }}
+          >
+            {name}
+          </p>
+          <p className="text-3xl font-bold text-white leading-none">{value}</p>
         </div>
         {icon && (
-          <span className={`text-xl p-2 rounded-xl border ${accents[accent] ?? accents.indigo}`}>
+          <span
+            className="text-xl p-2 rounded-xl"
+            style={{
+              background: a.bg,
+              color: a.color,
+              border: `1px solid ${a.border}`,
+            }}
+          >
             {icon}
           </span>
         )}

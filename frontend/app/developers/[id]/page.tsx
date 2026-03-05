@@ -13,11 +13,11 @@ import InsightPanel from "@/components/InsightPanel";
 import ScoreRing from "@/components/ScoreRing";
 import AppShell from "@/components/AppShell";
 
-const TIER_STYLES: Record<string, string> = {
-  Elite: "bg-amber-100 text-amber-800 ring-1 ring-amber-200",
-  Senior: "bg-blue-100 text-blue-800 ring-1 ring-blue-200",
-  Mid: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200",
-  Junior: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
+const TIER_STYLES: Record<string, { bg: string; color: string; border: string }> = {
+  Elite:  { bg: "rgba(234,179,8,0.2)",   color: "#fbbf24", border: "rgba(234,179,8,0.3)" },
+  Senior: { bg: "rgba(59,130,246,0.2)",  color: "#60a5fa", border: "rgba(59,130,246,0.3)" },
+  Mid:    { bg: "rgba(34,197,94,0.2)",   color: "#4ade80", border: "rgba(34,197,94,0.3)" },
+  Junior: { bg: "rgba(100,116,139,0.2)", color: "#94a3b8", border: "rgba(100,116,139,0.3)" },
 };
 
 const LANG_COLORS: Record<string, string> = {
@@ -85,7 +85,11 @@ export default function DeveloperProfilePage() {
     queryKey: ["developer", id],
     queryFn: async () => {
       const res = await api.get(`/api/v1/developers/${id}`);
-      return res.data;
+      const dev: Developer = res.data.developer ?? res.data;
+      if (res.data.report?.ai_insights) {
+        dev.insights = res.data.report.ai_insights;
+      }
+      return dev;
     },
     enabled: !!user && !!id,
   });
@@ -135,7 +139,11 @@ export default function DeveloperProfilePage() {
         <div className="px-8 py-7">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-white rounded-2xl border border-slate-200 p-5 h-28" />
+              <div
+                key={i}
+                className="animate-pulse rounded-2xl p-5 h-28"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+              />
             ))}
           </div>
         </div>
@@ -147,12 +155,21 @@ export default function DeveloperProfilePage() {
     return (
       <AppShell>
         <div className="px-8 py-7">
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-center justify-between">
+          <div
+            className="rounded-2xl p-6 flex items-center justify-between"
+            style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}
+          >
             <div>
-              <p className="text-red-800 font-semibold">Failed to load developer profile</p>
-              <p className="text-red-600 text-sm mt-1">The developer may not exist or the connection failed.</p>
+              <p className="text-red-400 font-semibold">Failed to load developer profile</p>
+              <p className="text-red-400/70 text-sm mt-1">The developer may not exist or the connection failed.</p>
             </div>
-            <button onClick={() => refetch()} className="px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700">Retry</button>
+            <button
+              onClick={() => refetch()}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ background: "rgba(239,68,68,0.6)" }}
+            >
+              Retry
+            </button>
           </div>
         </div>
       </AppShell>
@@ -164,7 +181,7 @@ export default function DeveloperProfilePage() {
       <AppShell>
         <div className="px-8 py-7 text-center">
           <p className="text-slate-400">Developer not found.</p>
-          <Link href="/dashboard" className="text-indigo-600 text-sm mt-2 inline-block hover:underline">← Back to Dashboard</Link>
+          <Link href="/dashboard" className="text-indigo-400 text-sm mt-2 inline-block hover:underline">← Back to Dashboard</Link>
         </div>
       </AppShell>
     );
@@ -192,136 +209,232 @@ export default function DeveloperProfilePage() {
     { metric: "Activity", value: Math.min((developer.active_days ?? 0) * 3, 100) },
   ];
 
+  const tierStyle = developer.tier ? (TIER_STYLES[developer.tier] ?? TIER_STYLES.Junior) : null;
+
   return (
     <AppShell>
-      <div className="px-8 py-7 space-y-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm">
-          <Link href="/dashboard" className="text-slate-400 hover:text-indigo-600 transition-colors">Dashboard</Link>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-700 font-medium">{developer.display_name || developer.github_username}</span>
-        </div>
+      <div className="space-y-6" style={{ background: "#0b0b14", minHeight: "100%" }}>
+        {/* Hero Section */}
+        <div
+          className="px-8 pt-8 pb-6"
+          style={{
+            background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.2) 0%, transparent 60%), #0b0b14",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm mb-6">
+            <Link href="/dashboard" className="transition-colors" style={{ color: "#475569" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#a5b4fc"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#475569"; }}
+            >
+              Dashboard
+            </Link>
+            <span style={{ color: "#334155" }}>/</span>
+            <span style={{ color: "#94a3b8" }}>{developer.display_name || developer.github_username}</span>
+          </div>
 
-        {/* Profile Header */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-24 bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-600" />
-          <div className="px-6 pb-6">
-            <div className="flex items-end justify-between -mt-10">
-              <div className="flex items-end gap-4">
-                {developer.avatar_url
-                  ? <Image src={developer.avatar_url} alt={developer.display_name || developer.github_username || ""} width={80} height={80}
-                      className="rounded-2xl ring-4 ring-white shadow-lg" />
-                  : <div className="w-20 h-20 rounded-2xl ring-4 ring-white bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-                      {initial}
-                    </div>
-                }
-                <div className="pb-1">
-                  <h1 className="text-xl font-bold text-slate-900">{developer.display_name || developer.github_username}</h1>
-                  <p className="text-slate-400 text-sm">@{developer.github_username}</p>
-                  {developer.tier && (
-                    <span className={`inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${TIER_STYLES[developer.tier] ?? "bg-slate-100 text-slate-600"}`}>
-                      {developer.tier}
-                    </span>
-                  )}
+          {/* Profile header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-5">
+              {/* Avatar 96px with glow ring */}
+              {developer.avatar_url ? (
+                <Image
+                  src={developer.avatar_url}
+                  alt={developer.display_name || developer.github_username || ""}
+                  width={96}
+                  height={96}
+                  className="rounded-full"
+                  style={{
+                    outline: "2px solid rgba(99,102,241,0.4)",
+                    outlineOffset: "2px",
+                    boxShadow: "0 0 20px rgba(99,102,241,0.3)",
+                  }}
+                />
+              ) : (
+                <div
+                  className="w-24 h-24 rounded-full flex items-center justify-center text-white text-4xl font-bold"
+                  style={{
+                    background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                    outline: "2px solid rgba(99,102,241,0.4)",
+                    outlineOffset: "2px",
+                    boxShadow: "0 0 20px rgba(99,102,241,0.3)",
+                  }}
+                >
+                  {initial}
                 </div>
+              )}
+              <div>
+                <h1 className="text-3xl font-bold text-white">{developer.display_name || developer.github_username}</h1>
+                <p className="text-slate-400 text-sm mt-0.5">@{developer.github_username}</p>
+                {developer.tier && tierStyle && (
+                  <span
+                    className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold"
+                    style={{
+                      background: tierStyle.bg,
+                      color: tierStyle.color,
+                      border: `1px solid ${tierStyle.border}`,
+                    }}
+                  >
+                    {developer.tier}
+                  </span>
+                )}
               </div>
-              {developer.score != null && <ScoreRing score={developer.score} tier={developer.tier ?? "Junior"} size={80} />}
             </div>
+            {developer.score != null && <ScoreRing score={developer.score} tier={developer.tier ?? "Junior"} size={80} />}
           </div>
         </div>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {metrics.map((m) => (
-            <MetricCard key={m.name} name={m.name} value={m.value} icon={m.icon} accent={m.accent} />
-          ))}
-        </div>
+        <div className="px-8 space-y-6 pb-8">
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {metrics.map((m) => (
+              <MetricCard key={m.name} name={m.name} value={m.value} icon={m.icon} accent={m.accent} />
+            ))}
+          </div>
 
-        {/* Top Repos + Language Breakdown — sourced from GitHub public API */}
-        {(topRepos.length > 0 || languageBreakdown.length > 0) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {topRepos.length > 0 && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <span>📦</span> Top Repositories
-                </h2>
-                <div className="space-y-1">
-                  {topRepos.map((repo) => (
-                    <a key={repo.id} href={repo.html_url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors group">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 group-hover:text-indigo-600 truncate">{repo.name}</p>
-                        {repo.description && (
-                          <p className="text-xs text-slate-400 truncate mt-0.5">{repo.description}</p>
-                        )}
-                        <div className="flex items-center gap-3 mt-1">
-                          {repo.language && (
-                            <span className="text-xs text-slate-500 flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full inline-block shrink-0"
-                                style={{ backgroundColor: LANG_COLORS[repo.language] ?? "#94a3b8" }} />
-                              {repo.language}
-                            </span>
+          {/* Top Repos + Language Breakdown */}
+          {(topRepos.length > 0 || languageBreakdown.length > 0) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {topRepos.length > 0 && (
+                <div
+                  className="rounded-2xl p-6"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <h2 className="font-bold text-white mb-4 flex items-center gap-2">
+                    <span>📦</span> Top Repositories
+                  </h2>
+                  <div className="space-y-1">
+                    {topRepos.map((repo) => (
+                      <a
+                        key={repo.id}
+                        href={repo.html_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors group"
+                        style={{ color: "inherit" }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                      >
+                        <div className="min-w-0">
+                          <p
+                            className="text-sm font-semibold truncate"
+                            style={{ color: "#e2e8f0" }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#a5b4fc"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#e2e8f0"; }}
+                          >
+                            {repo.name}
+                          </p>
+                          {repo.description && (
+                            <p className="text-xs truncate mt-0.5" style={{ color: "#475569" }}>{repo.description}</p>
                           )}
-                          <span className="text-xs text-slate-400">
-                            {new Date(repo.updated_at).toLocaleDateString()}
-                          </span>
+                          <div className="flex items-center gap-3 mt-1">
+                            {repo.language && (
+                              <span className="text-xs flex items-center gap-1" style={{ color: "#64748b" }}>
+                                <span
+                                  className="w-2 h-2 rounded-full inline-block shrink-0"
+                                  style={{ backgroundColor: LANG_COLORS[repo.language] ?? "#94a3b8" }}
+                                />
+                                {repo.language}
+                              </span>
+                            )}
+                            <span className="text-xs" style={{ color: "#475569" }}>
+                              {new Date(repo.updated_at).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-xs text-amber-600 font-semibold flex items-center gap-1 ml-3 shrink-0">
-                        ★ {repo.stargazers_count.toLocaleString()}
-                      </span>
-                    </a>
-                  ))}
+                        <span className="text-xs font-semibold flex items-center gap-1 ml-3 shrink-0" style={{ color: "#fbbf24" }}>
+                          ★ {repo.stargazers_count.toLocaleString()}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {languageBreakdown.length > 0 && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <span>🗂️</span> Language Breakdown
-                </h2>
-                <div className="space-y-3">
-                  {languageBreakdown.map(({ lang, pct }) => (
-                    <div key={lang} className="flex items-center gap-3">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: LANG_COLORS[lang] ?? "#94a3b8" }} />
-                      <span className="text-sm text-slate-700 w-28 truncate">{lang}</span>
-                      <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
-                        <div className="h-2 rounded-full"
-                          style={{ width: `${pct}%`, backgroundColor: LANG_COLORS[lang] ?? "#6366f1" }} />
+              {languageBreakdown.length > 0 && (
+                <div
+                  className="rounded-2xl p-6"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <h2 className="font-bold text-white mb-4 flex items-center gap-2">
+                    <span>🗂️</span> Language Breakdown
+                  </h2>
+                  <div className="space-y-3">
+                    {languageBreakdown.map(({ lang, pct }) => (
+                      <div key={lang} className="flex items-center gap-3">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: LANG_COLORS[lang] ?? "#94a3b8" }}
+                        />
+                        <span className="text-sm w-28 truncate" style={{ color: "#94a3b8" }}>{lang}</span>
+                        <div
+                          className="flex-1 rounded-full h-2 overflow-hidden"
+                          style={{ background: "rgba(255,255,255,0.06)" }}
+                        >
+                          <div
+                            className="h-2 rounded-full"
+                            style={{ width: `${pct}%`, backgroundColor: LANG_COLORS[lang] ?? "#6366f1" }}
+                          />
+                        </div>
+                        <span className="text-xs w-8 text-right" style={{ color: "#475569" }}>{pct}%</span>
                       </div>
-                      <span className="text-xs text-slate-400 w-8 text-right">{pct}%</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Radar + AI Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <h2 className="font-bold text-slate-800 mb-4">Metric Breakdown</h2>
-            <ResponsiveContainer width="100%" height={240}>
-              <RadarChart data={radarData}>
-                <PolarGrid stroke="#e2e8f0" />
-                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: "#94a3b8" }} />
-                <Radar name="Developer" dataKey="value" fill="#6366f1" fillOpacity={0.3} stroke="#6366f1" strokeWidth={2} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="lg:col-span-3 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-bold text-slate-800 text-base">AI Insights</h2>
-              <button onClick={() => refreshInsights()} disabled={refreshing}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-                {refreshing ? "Generating..." : "✦ Refresh Insights"}
-              </button>
+              )}
             </div>
-            <InsightPanel insights={developer.insights ?? {}} />
+          )}
+
+          {/* Radar + AI Insights */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div
+              className="lg:col-span-2 rounded-2xl p-6"
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              <h2 className="font-bold text-white mb-4">Metric Breakdown</h2>
+              <ResponsiveContainer width="100%" height={240}>
+                <RadarChart data={radarData} style={{ background: "#0f0f1a" }}>
+                  <PolarGrid stroke="rgba(255,255,255,0.08)" />
+                  <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: "#475569" }} />
+                  <Radar
+                    name="Developer"
+                    dataKey="value"
+                    fill="rgba(99,102,241,0.3)"
+                    fillOpacity={1}
+                    stroke="#6366f1"
+                    strokeWidth={2}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="lg:col-span-3 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-white text-base">AI Insights</h2>
+                <button
+                  onClick={() => refreshInsights()}
+                  disabled={refreshing}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-colors"
+                  style={{
+                    background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                    boxShadow: "0 0 16px rgba(99,102,241,0.3)",
+                  }}
+                >
+                  {refreshing ? "Generating..." : "✦ Refresh Insights"}
+                </button>
+              </div>
+              <InsightPanel insights={developer.insights ?? {}} />
+            </div>
           </div>
         </div>
       </div>
