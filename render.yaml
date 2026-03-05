@@ -1,0 +1,46 @@
+services:
+  # ── ML Service (Python FastAPI) ─────────────────────────────────────────────
+  - type: web
+    name: workpulse-ml
+    runtime: docker
+    dockerfilePath: ./ml-service/Dockerfile
+    dockerContext: ./ml-service
+    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false   # set in Render dashboard
+
+  # ── Backend (Go / Gin) ──────────────────────────────────────────────────────
+  - type: web
+    name: workpulse-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: GIN_MODE
+        value: release
+      - key: FIREBASE_PROJECT_ID
+        value: workpulse-88fab
+      - key: GITHUB_TOKEN
+        sync: false   # set in Render dashboard
+      - key: GROQ_API_KEY
+        sync: false   # set in Render dashboard
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false   # paste full service-account JSON in Render dashboard
+      - key: ML_SERVICE_URL
+        fromService:
+          name: workpulse-ml
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: ALLOWED_ORIGINS
+        sync: false   # set to your Netlify URL, e.g. https://workpulse.netlify.app
+      - key: BIGQUERY_PROJECT_ID
+        value: workpulse-88fab
+      - key: BIGQUERY_DATASET_ID
+        value: workpulse_analytics

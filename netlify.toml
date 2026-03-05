@@ -1,0 +1,11 @@
+[build]
+  base    = "frontend"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Required for Next.js 14 App Router SSR/dynamic routes
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
