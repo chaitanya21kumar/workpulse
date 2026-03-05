@@ -40,14 +40,17 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Environment files
+# Environment files — ignore all env files, keep only .example templates
 .env
+.env.*
 .env.local
 .env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
 *.env
+frontend/.env*
+!frontend/.env*.example
 
 # IDE
 .idea/
