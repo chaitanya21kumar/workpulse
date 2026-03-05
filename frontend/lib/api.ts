@@ -14,4 +14,17 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Unwrap backend envelope { success, data, message } → return inner data directly
+api.interceptors.response.use((response) => {
+  if (
+    response.data &&
+    typeof response.data === "object" &&
+    "success" in response.data &&
+    "data" in response.data
+  ) {
+    return { ...response, data: response.data.data };
+  }
+  return response;
+});
+
 export default api;
