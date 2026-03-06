@@ -11,6 +11,20 @@
 
 ## Platform Preview
 
+### Landing Page
+Marketing homepage with live demo and feature overview — no login required.
+
+![Landing Page](docs/screenshots/workpulse-landing-page.png)
+
+---
+
+### Login
+One-click Google OAuth authentication via Firebase.
+
+![Login](docs/screenshots/workpulse-google-auth-login.png)
+
+---
+
 ### Dashboard
 Real-time team leaderboard with ML-computed performance scores and commit activity chart.
 
